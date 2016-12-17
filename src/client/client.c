@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sm.h>
 
 int client_main(const char *server_ip, unsigned short server_port) {
   struct sockaddr_in sa;
@@ -43,9 +44,12 @@ int client_main(const char *server_ip, unsigned short server_port) {
     FD_SET(STDIN_FD, &rd_fds);
     if (env.data_sock >= 0) {
       FD_SET(env.data_sock, &rd_fds);
+      if (env.passive_last_command == FTP_LAST_CMD_STORE && env.local_fd > 0) {
+        FD_SET(env.data_sock, &wr_fds);
+      }
     }
     int max_fd = ctrl_sock > env.data_sock ? ctrl_sock : env.data_sock;
-    int activity = select(max_fd + 1, &rd_fds, NULL, NULL, NULL);
+    int activity = select(max_fd + 1, &rd_fds, &wr_fds, NULL, NULL);
 
     if ((activity < 0) && (errno != EINTR)) {
       fprintf(stderr, "select error");
@@ -73,10 +77,8 @@ int client_main(const char *server_ip, unsigned short server_port) {
           close(env.local_fd);
           env.local_fd = -1;
         }
-        struct timeval t2;
-        gettimeofday(&t2, NULL);
-        double elapsed_time = (t2.tv_sec - env.transfer_start_time.tv_sec) * 1000.0;      // sec to ms
-        elapsed_time += (t2.tv_usec - env.transfer_start_time.tv_usec) / 1000.0;   // us to ms
+
+        double elapsed_time = sm_toc(&env);
         printf("Transfer session done. %d bytes, %f ms\n", env.local_file_size, elapsed_time);
         env.local_file_size = 0;
         env.passive_port = 0;
@@ -97,6 +99,25 @@ int client_main(const char *server_ip, unsigned short server_port) {
                SM_MSG_CTRL_SOCK, buf, (unsigned int)count,
                ctrl_sock, env.data_sock);
       printf("FTP: %s\n", buf);
+    }
+
+    if (env.data_sock > 0 && env.local_fd > 0 && FD_ISSET(env.data_sock, &wr_fds)) {
+      char send_buf[TCP_SEND_LENGTH];
+      ssize_t rn = read(env.local_fd, send_buf, TCP_SEND_LENGTH);
+      ssize_t wrn = write(env.data_sock, send_buf, (size_t) rn);
+      assert(wrn == rn);
+      if (rn < TCP_SEND_LENGTH) {
+        // all data sent
+        ftp_state = SM_STATE_LOGGED_IN;
+        close(env.local_fd);
+        env.local_fd = -1;
+        env.passive_port = 0;
+        close(env.data_sock);
+        env.data_sock = -1;
+        env.local_file_size = 0;
+        double time = sm_toc(&env);
+        printf("sending done time %f.\n", time);
+      }
     }
   }
   return 0;

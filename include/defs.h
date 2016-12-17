@@ -3,6 +3,7 @@
 #define MAX_LINUX_PATH_LENGTH 4096
 #define STDIN_FD 0
 #define TCP_MTU 65536
+#define TCP_SEND_LENGTH 1400
 
 #define FTP_CMD_USER      "user"
 #define FTP_CMD_PASSWORD  "pass"
@@ -10,6 +11,14 @@
 #define FTP_CMD_RETRIEVE  "retr"
 #define FTP_CMD_STORE     "stor"
 #define FTP_CMD_LIST      "list"
+
+#define FTP_CMD_HELP      "help"
+#define FTP_CMD_SYS_TYPE  "syst"
+#define FTP_CMD_FEATURE   "feat"
+#define FTP_CMD_MTDM      "mtdm"
+#define FTP_CMD_PWD       "pwd"
+#define FTP_CMD_CWD       "cwd"
+#define FTP_CMD_TRANSFER_TYPE "type"
 
 enum {
   SM_MSG_STDIN,
@@ -21,8 +30,15 @@ enum {
 
 enum {
   FTP_CODE_PASSIVE_INITIATED = 150,
+  FTP_CODE_SWITCH_TO_BIN_MODE = 200,
+  FTP_CODE_FEATURES = 211,
+  FTP_CODE_HELP = 214,
+  FTP_CODE_SYS_TYPE = 215,
+  FTP_CODE_HELLO = 220,
   FTP_CODE_TRANSFER_COMPLETE = 226,
   FTP_CODE_ENTER_PASV = 227,
   FTP_CODE_LOGIN_SUCCESSFUL = 230,
+  FTP_CODE_PATHNAME_CREATED = 257,
   FTP_CODE_PLEASE_SPECIFY_PASSWORD = 331,
+  FTP_CODE_PLEASE_LOGIN = 530
 };

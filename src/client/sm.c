@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+#include <sm.h>
 
 int create_passive_data_socket(const char *ip, unsigned short port) {
   struct sockaddr_in sa;
@@ -146,6 +147,14 @@ int sm_trans(int state_in, int *state_out, sm_env *env,
       }
       else if (strcmp(command, FTP_CMD_STORE) == 0) {
         parse_param(env->file_name, msg, msg_len);
+
+        sm_get_full_path(file_path, env);
+        int fd = open(file_path, O_RDONLY);
+        if (fd < 0) {
+          printf("open: \"%s\" failed! %s\n", file_path, strerror(errno));
+          exit(1);
+        }
+        env->local_fd = fd;
         env->passive_last_command = FTP_LAST_CMD_STORE;
       }
       else if (strcmp(command, FTP_CMD_LIST) == 0) {
@@ -157,7 +166,7 @@ int sm_trans(int state_in, int *state_out, sm_env *env,
     }
     else if (msg_source == SM_MSG_CTRL_SOCK) {
       if (code == FTP_CODE_PASSIVE_INITIATED) {
-        gettimeofday(&env->transfer_start_time, NULL);
+        sm_tick(env);
 
         switch (env->passive_last_command) {
         case FTP_LAST_CMD_LIST:
@@ -170,19 +179,20 @@ int sm_trans(int state_in, int *state_out, sm_env *env,
             fprintf(stderr, "open: failed\n");
             exit(1);
           }
-          char buf1[65536];
-          while (1) {
-            ssize_t total = read(fd, buf1, sizeof(buf1));
-            if (total <= 0)
-              break;
-            write(env->data_sock, buf1, (size_t) total);
-            env->local_file_size += total;
-          }
-          close(fd);
-          close(env->data_sock);
-          env->data_sock = -1;
-          env->passive_port = 0;
-          *state_out = SM_STATE_LOGGED_IN;
+          env->local_fd = fd;
+//          char buf1[65536];
+//          while (1) {
+//            ssize_t total = read(fd, buf1, sizeof(buf1));
+//            if (total <= 0)
+//              break;
+//            write(env->data_sock, buf1, (size_t) total);
+//            env->local_file_size += total;
+//          }
+//          close(fd);
+//          close(env->data_sock);
+//          env->data_sock = -1;
+//          env->passive_port = 0;
+//          *state_out = SM_STATE_LOGGED_IN;
           break;
         }
         case FTP_LAST_CMD_RETRIEVE:
@@ -216,4 +226,15 @@ int sm_trans(int state_in, int *state_out, sm_env *env,
     assert(0);
   }
   return ret;
+}
+
+void sm_tick(sm_env *env) {
+  gettimeofday(&env->transfer_start_time, NULL);
+}
+double sm_toc(sm_env *env) {
+  struct timeval t2;
+  gettimeofday(&t2, NULL);
+  double elapsed_time = (t2.tv_sec - env->transfer_start_time.tv_sec) * 1000.0;      // sec to ms
+  elapsed_time += (t2.tv_usec - env->transfer_start_time.tv_usec) / 1000.0;   // us to ms
+  return elapsed_time;
 }

@@ -12,7 +12,7 @@ enum {
   SM_STATE_WELCOMED,
   SM_STATE_WAIT_FOR_PASSWORD,
   SM_STATE_LOGGED_IN,
-  SM_STATE_PASSIVE,
+  SM_STATE_PASSIVE
 };
 
 enum {
@@ -40,5 +40,8 @@ void sm_init(sm_env *env);
 int sm_trans(int state_in, int *state_out, sm_env *env_in,
              int msg_source, const char *msg, unsigned int msg_len,
              int ctrl_sock, int data_sock);
+
+void sm_tick(sm_env *env);
+double sm_toc(sm_env *env);
 
 #endif //FTP_CLIENT_SM_H

@@ -53,13 +53,26 @@ unsigned short parse_pasv_port(const char *str, unsigned int len) {
 }
 
 void parse_command(char *command, const char *str, unsigned int len) {
-  assert(len > 4);
-  memcpy(command, str, 4);
-  for (int i = 0; i < 4; ++i) {
+  int i = 0;
+  for (i = 0; i < len; ++i) {
+    if (isspace(str[i])) {
+      break;
+    }
     command[i] = (char) tolower(str[i]);
   }
-  command[4] = 0;
+  command[i] = 0;
 }
+
+void parse_param1(char *param1, const char *str, unsigned int len) {
+  int i = 0;
+  for (i = 0; i < len; ++i) {
+    if (str[i] == ' ') {
+      break;
+    }
+  }
+  strcpy(param1, str + i);
+}
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <defs.h>
