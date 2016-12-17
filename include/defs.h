@@ -1,0 +1,28 @@
+#pragma once
+
+#define MAX_LINUX_PATH_LENGTH 4096
+#define STDIN_FD 0
+#define TCP_MTU 65536
+
+#define FTP_CMD_USER      "user"
+#define FTP_CMD_PASSWORD  "pass"
+#define FTP_CMD_PASSIVE   "pasv"
+#define FTP_CMD_RETRIEVE  "retr"
+#define FTP_CMD_STORE     "stor"
+#define FTP_CMD_LIST      "list"
+
+enum {
+  SM_MSG_STDIN,
+  SM_MSG_CTRL_SOCK,
+  SM_MSG_DATA_SOCK,
+  SM_MSG_CTRL_SOCK_WR,
+  SM_MSG_DATA_SOCK_WR
+};
+
+enum {
+  FTP_CODE_PASSIVE_INITIATED = 150,
+  FTP_CODE_TRANSFER_COMPLETE = 226,
+  FTP_CODE_ENTER_PASV = 227,
+  FTP_CODE_LOGIN_SUCCESSFUL = 230,
+  FTP_CODE_PLEASE_SPECIFY_PASSWORD = 331,
+};
