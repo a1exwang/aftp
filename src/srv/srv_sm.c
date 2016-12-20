@@ -14,6 +14,7 @@ void srv_sm_init(srv_sm_env *env) {
   }
   strcpy(env->ftp_root, "/home/alexwang/pl/ftp");
   strcpy(env->ftp_cwd, "/");
+  env->connected = 0;
 }
 
 void srv_sm_destroy(srv_sm_env *env) {
@@ -25,27 +26,26 @@ void srv_sm_destroy(srv_sm_env *env) {
   if (env->file_fd > 0) {
     close(env->file_fd);
   }
+  env->connected = 0;
 }
 
-int srv_max_fd(srv_sm_env *env) {
+int srv_max_fd(srv_sm_env envs[], int count) {
   int max_fd = 0;
-  for (int i = 0; i < FD_COUNT; ++i) {
-    if (env->fds[i] > max_fd) {
-      max_fd = env->fds[i];
+  for (int j = 0; j < count; ++j) {
+    for (int i = 0; i < FD_COUNT; ++i) {
+      if (envs[j].fds[i] > max_fd) {
+        max_fd = envs[j].fds[i];
+      }
     }
   }
   return max_fd;
 }
 
 void srv_set_fds(srv_sm_env *env, int state, fd_set *rd_fds, fd_set *wr_fds) {
-  FD_ZERO(rd_fds);
-  for (int i = 0; i < FD_COUNT; ++i) {
-    if (env->fds[i] >= 0) {
-      FD_SET(env->fds[i], rd_fds);
-    }
-  }
+  FD_SET(env->fds[FD_DATA_SOCK], rd_fds);
+  FD_SET(env->fds[FD_DATA_SRV], rd_fds);
+  FD_SET(env->fds[FD_CTRL_SOCK], rd_fds);
 
-  FD_ZERO(wr_fds);
   if (state == SRV_SM_STATE_SENDING) {
     FD_SET(env->fds[FD_DATA_SOCK], wr_fds);
   }

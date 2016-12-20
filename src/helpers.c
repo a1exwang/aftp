@@ -71,6 +71,7 @@ void parse_param1(char *param1, const char *str, unsigned int len) {
     }
   }
   strcpy(param1, str + i);
+  trim(param1);
 }
 
 #include <stdarg.h>

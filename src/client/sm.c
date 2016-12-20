@@ -61,6 +61,7 @@ void parse_param(char *param, const char *str, unsigned int len) {
   trim(param);
 }
 
+
 int sm_trans(int state_in, int *state_out, sm_env *env,
              int msg_source, const char *msg, unsigned int msg_len,
              int ctrl_sock, int data_sock) {
@@ -74,7 +75,30 @@ int sm_trans(int state_in, int *state_out, sm_env *env,
     code = parse_response_code(msg, msg_len);
   }
 
-  int ret = 0;
+  if (msg_source == SM_MSG_STDIN) {
+    if (strcmp(command, FTP_CLIENT_CMD_PWD) == 0) {
+      printf("%s\n", env->local_cwd);
+      return SM_RET_NONE;
+    }
+    else if (strcmp(command, FTP_CLIENT_CMD_CD) == 0) {
+      char rel_path[MAX_LINUX_PATH_LENGTH];
+      char full_path[MAX_LINUX_PATH_LENGTH];
+      strcpy(full_path, env->local_cwd);
+      parse_param1(rel_path, msg, msg_len);
+      strcat(full_path, "/");
+      strcat(full_path, rel_path);
+
+      if (realpath(full_path, env->local_cwd)) {
+        printf("%s\n", env->local_cwd);
+      }
+      else {
+        fprintf(stderr, "Wrong path.\n");
+      }
+      return SM_RET_NONE;
+    }
+  }
+
+  int ret = SM_RET_SEND_TO_SERVER;
   char file_path[MAX_LINUX_PATH_LENGTH];
 
   switch (state_in) {

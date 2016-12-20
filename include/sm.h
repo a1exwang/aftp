@@ -6,6 +6,15 @@
 #include <sys/time.h>
 
 
+#define FTP_CLIENT_CMD_LIST   "list"
+#define FTP_CLIENT_CMD_CD     "cd"
+#define FTP_CLIENT_CMD_PWD    "pwd"
+
+enum {
+  SM_RET_NONE = 0,
+  SM_RET_SEND_TO_SERVER,
+};
+
 enum {
   SM_STATE_INIT,
   SM_STATE_CONNECTED,

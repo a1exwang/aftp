@@ -34,9 +34,10 @@ typedef struct {
 
   char ftp_root[MAX_LINUX_PATH_LENGTH];
   char ftp_cwd[MAX_LINUX_PATH_LENGTH];
+  int connected;
 } srv_sm_env;
 
-int srv_max_fd(srv_sm_env *env);
+int srv_max_fd(srv_sm_env env[], int count);
 void srv_set_fds(srv_sm_env *env, int state, fd_set *rd_fds, fd_set *wr_fds);
 void srv_sm_init(srv_sm_env *env);
 void srv_sm_destroy(srv_sm_env *env);

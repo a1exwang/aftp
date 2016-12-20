@@ -60,11 +60,13 @@ int client_main(const char *server_ip, unsigned short server_port) {
     if (FD_ISSET(STDIN_FD, &rd_fds)) {
       ssize_t count = read(STDIN_FD, buf, sizeof(buf));
       buf[count] = 0;
-      sm_trans(ftp_state, &ftp_state, &env,
-               SM_MSG_STDIN, buf, (unsigned int)count,
-               ctrl_sock, env.data_sock);
-      ssize_t write_len = write(ctrl_sock, buf, (size_t) count);
-      assert(write_len > 0);
+      int sm_ret = sm_trans(ftp_state, &ftp_state, &env,
+                            SM_MSG_STDIN, buf, (unsigned int)count,
+                            ctrl_sock, env.data_sock);
+      if (sm_ret == SM_RET_SEND_TO_SERVER) {
+        ssize_t write_len = write(ctrl_sock, buf, (size_t) count);
+        assert(write_len > 0);
+      }
     }
 
     if (env.data_sock > 0 && FD_ISSET(env.data_sock, &rd_fds)) {
